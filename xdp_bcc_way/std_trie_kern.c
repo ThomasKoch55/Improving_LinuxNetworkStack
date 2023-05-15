@@ -132,5 +132,5 @@ int xdp_prog_simple(struct xdp_md *context)
   void *data_end = (void *)(long)context->data_end;
   void *data = (void *)(long)context->data;
   
-  return XDP_DROP;
+  return XDP_PASS;
 }
