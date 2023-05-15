@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
+
 from bcc import BPF, libbcc
 
-def attach():
-    b = BPF(src_file="std_trie_kern.c")
+cflgs = ['-O2', '-std=gnu89', '-w', '-D__KERNEL__', '-D__TARGET_ARCH_x86']
 
-    b.attach_xdp(dev="veth-basic02", fn=b.load_func("xdp_prog_simple", BPF.XDP))
+def attach(iface):
+    b = BPF(src_file="std_trie_kern.c", cflags=cflgs)
+
+    func = b.load_func("xdp_prog_simple", BPF.XDP, device="iface")
+
+
+    
+    b.attach_xdp(dev=iface, fn=func, flags=0)#, flags=XDP_FLAGS_DRV_MODE)
 
 #def detach():
 #    BPF.remove_xdp(dev="ens33")
 
-attach()
+attach(iface = "ens4")
 #detach()

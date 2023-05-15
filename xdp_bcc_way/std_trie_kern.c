@@ -6,18 +6,12 @@
 //#include <arpa/inet.h>
 #include <bcc/proto.h>
 
-//SEC("xdp")
-int xdp_prog_simple(struct xdp_md *ctx)
-{
-    return XDP_DROP;
-}
+
 
 struct ipv4_lpm_key {
     __u32 prefixlen;
     __u32 data;
 };
-
-
 
 /*
 struct {
@@ -31,12 +25,17 @@ struct {
 
 // BCC TRIE
 
-struct key_test{
-    __u8 ip4[4];
+struct key_t {
+    __u16 pfxLen;
+    __u8 ip[8];
 } BPF_PACKET_HEADER;
 
-BPF_LPM_TRIE(trie, struct key_v6);
-BPF_HASH(start);
+struct value_t {
+  __u8 valid;
+} BPF_PACKET_HEADER;
+
+BPF_LPM_TRIE(my_trie, struct ipv4_lpm_key);//, struct value_t, 1024);
+//BPF_HASH(start);
 
 
 
@@ -122,4 +121,16 @@ int xdp_std_trie_router(struct xdp_md *ctx)
 
 
     return XDP_PASS;
+}
+
+
+//SEC("xdp")
+int xdp_prog_simple(struct xdp_md *context)
+{
+  enum xdp_action rc = XDP_PASS;
+  __u64 nh_off;
+  void *data_end = (void *)(long)context->data_end;
+  void *data = (void *)(long)context->data;
+  
+  return XDP_DROP;
 }
