@@ -8,34 +8,29 @@
 
 
 
-struct ipv4_lpm_key {
+struct ipv4_lpm_value {
     __u32 prefixlen;
-    __u32 data;
+    __u32 iface;
 };
 
-/*
-struct {
-    __uint(type, BPF_MAP_TYPE_LPM_TRIE);
-    __type(key, struct ipv4_lpm_key);
-    __type(fwd_int, __u32);
-    __uint(map_flags, BPF_F_NO_PREALLOC);
-    __uint(max_entries, 255);
-} ipv4_lpm_map SEC("maps");
-*/
+struct testKeyS {
+    __u64 ip;
+};
+
 
 // BCC TRIE
 
 struct key_t {
     __u16 pfxLen;
-    __u8 ip[8];
+    __u8 ip[4];
 } BPF_PACKET_HEADER;
 
 struct value_t {
-  __u8 valid;
+  __u64 valid;
 } BPF_PACKET_HEADER;
 
-BPF_LPM_TRIE(my_trie, struct ipv4_lpm_key);//, struct value_t, 1024);
-//BPF_HASH(start);
+BPF_LPM_TRIE(my_trie, struct key_t, struct value_t);
+
 
 
 
@@ -48,7 +43,7 @@ struct hdr_cursor {
     void *pos;
 };
 
-    // Parse ethernet header //
+// Parse ethernet header //
 
 static __always_inline int parse_ethernet_hdr(struct hdr_cursor *nh, void *data_end, struct ethhdr **ethhdr)
 {
@@ -82,7 +77,7 @@ static __always_inline int parse_ipv4_hdr(struct hdr_cursor *nh, void *data_end,
 
 }
 
-//SEC("xdp_std_trie")
+
 int xdp_std_trie_router(struct xdp_md *ctx)
 {
     void *data_end = (void *)(long)ctx->data_end;
@@ -110,10 +105,10 @@ int xdp_std_trie_router(struct xdp_md *ctx)
     ip = parse_ipv4_hdr(&nh, data_end, &ipv4);
 
 
-    //const char source[4];
+    
     
     //in4_pton(source, 16, &ip, '\0', NULL);
-    //snprintf(source, 16, "%pI4", &ip);
+    
     
     bpf_trace_printk("dst ip: %d", ip);
     
@@ -124,13 +119,38 @@ int xdp_std_trie_router(struct xdp_md *ctx)
 }
 
 
-//SEC("xdp")
 int xdp_prog_simple(struct xdp_md *context)
 {
   enum xdp_action rc = XDP_PASS;
-  __u64 nh_off;
+  __u64 nh_off, res = 0;
   void *data_end = (void *)(long)context->data_end;
   void *data = (void *)(long)context->data;
+  struct key_t test_key;
+  struct value_t test_val;
+  struct value_t *val;
+
+  test_val.valid = 1;
+  test_key.pfxLen = 24;
+  test_key.ip[0] = 255;
+  test_key.ip[1] = 255;
+  test_key.ip[2] = 255;
+  test_key.ip[3] = 255;
+
+  my_trie.insert(&test_key, &test_val);
+
+
+  val= my_trie.lookup(&test_key);
+  
+  if(val){
+    res = val->valid;
+    
+  }
+
+  
+
+    
   
   return XDP_PASS;
 }
+
+
