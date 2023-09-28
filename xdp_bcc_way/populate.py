@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 from bcc import BPF, libbcc, table
-#from ctypes import * 
 import ctypes as ct
 
 PIN_PATH = "/sys/fs/bpf/my_trie"
+MAX_ENTRIES = 1000
 
 
 
@@ -32,7 +32,7 @@ class PinnedTrie(table.LpmTrie):
         self.map_fd = map_fd
         self.Key = key_t
         self.Leaf = leafType
-        #add self.maxEntries later
+        self.maxEntries = MAX_ENTRIES
 
 def addEntry(trie, key, value):
     trie[key] = value
@@ -40,12 +40,35 @@ def addEntry(trie, key, value):
 def populate():
     trie = PinnedTrie(PIN_PATH, value_t)                   #libbcc.lib.bpf_obj_get(ct.c_char_p(PIN_PATH.encode('utf-8')))
     print(trie.map_fd) # this is our trie fd
-    test_key = key_t(int(24), tuple((192, 168, 0, 0)))
-    test_val = value_t(int(1))
-    flag = ct.c_uint64(0)
 
+    ### TEST KEY ###
+
+    #test_key = key_t(int(24), tuple((192, 168, 0, 0)))
+    #test_key.printKey()
+
+    test_key = key_t()
+    test_key.pfxlen = (24)
+    test_key.ip = (192, 168, 0, 0)
+    print(test_key.printKey())
+
+    ################
+
+
+    ### TEST VAL ###
+    #test_val = value_t(int(1))
+    test_val = value_t()
+    test_val.valid = (1)
+    print(test_val.printVal())
+
+    ################
+
+
+    flag = ct.c_uint64(0)
+    
     ret = addEntry(trie, test_key, test_val)
-    #ret = libbcc.lib.bpf_map_update_elem(trie, test_key, test_val, flag)
+    #ret = libbcc.lib.bpf_map_update_elem(trie.map_fd, test_key, test_val, flag)
     print(ret)
+   
+    print(trie.items())
 
 populate()

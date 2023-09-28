@@ -21,7 +21,7 @@ struct testKeyS {
 // BCC TRIE
 
 struct key_t {
-    __u16 pfxLen;
+    __u32 pfxLen;
     __u8 ip[4];
 } BPF_PACKET_HEADER;
 
@@ -119,12 +119,13 @@ int xdp_std_trie_router(struct xdp_md *ctx)
 }
 
 
-int xdp_prog_simple(struct xdp_md *context)
+int xdp_prog_simple(struct xdp_md *context) //struct xdp_md *context
 {
-  enum xdp_action rc = XDP_PASS;
-  __u64 nh_off, res = 0;
-  void *data_end = (void *)(long)context->data_end;
-  void *data = (void *)(long)context->data;
+//    enum xdp_action rc = XDP_PASS;
+//    __u64 nh_off, res = 0;
+//    void *data_end = (void *)(long)context->data_end;
+//    void *data = (void *)(long)context->data;
+  /*
   struct key_t test_key;
   struct value_t test_val;
   struct value_t *val;
@@ -146,7 +147,7 @@ int xdp_prog_simple(struct xdp_md *context)
     
   }
 
-  
+  */
 
     
   
