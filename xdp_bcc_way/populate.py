@@ -4,7 +4,7 @@ from bcc import BPF, libbcc, table
 import ctypes as ct
 
 PIN_PATH = "/sys/fs/bpf/my_trie"
-MAX_ENTRIES = 1000
+MAX_ENTRIES = 10000000
 
 
 
@@ -37,38 +37,89 @@ class PinnedTrie(table.LpmTrie):
 def addEntry(trie, key, value):
     trie[key] = value
 
-def populate():
-    trie = PinnedTrie(PIN_PATH, value_t)                   #libbcc.lib.bpf_obj_get(ct.c_char_p(PIN_PATH.encode('utf-8')))
-    print(trie.map_fd) # this is our trie fd
+
+
+
+def populate(filename):
+
+    trie = PinnedTrie(PIN_PATH, value_t)
+
+    val = value_t(1)
+
+    # Each line is parsed into a list containing the IP as list[0] and the SNM as list[1]
+    # each list is then fed into our trie located at PIN_PATH with a hardcoded value_t of 1
+    # NOTE: the trie has a max size of MAX_ENTRIES
+
+    with open(filename, "rt") as file:
+
+        for line in file:
+
+            output = line.split("\t")
+            output = output[:-1]
+
+            #Split IP at '.' and convert to int
+            ip_list = output[0].split(".")
+            count = 0
+            for i in ip_list:
+                ip_list[count] = int(i)
+                count += 1
+            
+            key = key_t(int(output[1]), tuple(ip_list))
+
+            ret = addEntry(trie, key, val)
+
+            if(ret == -1):
+                print("Add to Trie failed! KEY: {0}   VAL: {1}".format(key.printKey(), val.printVal()))
+                exit(-1)
+    
+
+
+def print_trie():
+
+    trie = PinnedTrie(PIN_PATH, value_t)
+
+    total_pairs = 0
+    for i,ii in trie.items():
+        print("Trie Pair: {0}".format(total_pairs))
+        print(i.printKey())
+        print(ii.printVal())
+        total_pairs += 1
+    print("{0} total items dumped from the trie.".format(total_pairs))
+
+
+
+
+def populate_test():
+    trie = PinnedTrie(PIN_PATH, value_t)                   
+    print("Trie FD: ", trie.map_fd) # this is our trie fd
 
     ### TEST KEY ###
 
-    #test_key = key_t(int(24), tuple((192, 168, 0, 0)))
-    #test_key.printKey()
-
-    test_key = key_t()
-    test_key.pfxlen = (24)
-    test_key.ip = (192, 168, 0, 0)
-    print(test_key.printKey())
+    test_key = key_t(int(24), tuple((192, 168, 0, 0)))
+    print("Test Key: ", test_key.printKey())
 
     ################
 
 
     ### TEST VAL ###
-    #test_val = value_t(int(1))
-    test_val = value_t()
-    test_val.valid = (1)
-    print(test_val.printVal())
+
+    test_val = value_t(int(1))
+    print("Test Val: ", test_val.printVal())
 
     ################
 
-
-    flag = ct.c_uint64(0)
     
     ret = addEntry(trie, test_key, test_val)
     #ret = libbcc.lib.bpf_map_update_elem(trie.map_fd, test_key, test_val, flag)
     print(ret)
    
-    print(trie.items())
+    for i,ii in trie.items():
+        print("Dumping Trie:")
+        print(i.printKey())
+        print(ii.printVal())
 
-populate()
+#populate_test()
+
+populate("test_routes.txt")
+#populate("test_routes.txt")
+print_trie()

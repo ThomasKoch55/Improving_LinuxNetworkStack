@@ -8,15 +8,7 @@
 
 
 
-struct ipv4_lpm_value {
-    __u32 prefixlen;
-    __u32 iface;
-};
-
-struct testKeyS {
-    __u64 ip;
-};
-
+#define MAX_ELEMENTS 1000000
 
 // BCC TRIE
 
@@ -29,12 +21,7 @@ struct value_t {
   __u64 valid;
 } BPF_PACKET_HEADER;
 
-BPF_LPM_TRIE(my_trie, struct key_t, struct value_t);
-
-
-
-
-
+BPF_LPM_TRIE(my_trie, struct key_t, struct value_t, MAX_ELEMENTS);
 
 
 // Parse incoming packet //
@@ -42,6 +29,16 @@ BPF_LPM_TRIE(my_trie, struct key_t, struct value_t);
 struct hdr_cursor {
     void *pos;
 };
+
+// Create a key_t with the DST IP //
+
+static __always_inline void populate_key(__u8 *ip, struct key_t *key, __u32 pfx){
+    key->ip[0] = ip[0];
+    key->ip[1] = ip[1];
+    key->ip[2] = ip[2];
+    key->ip[3] = ip[3];
+    key->pfxLen = pfx;
+}
 
 // Parse ethernet header //
 
@@ -90,6 +87,8 @@ int xdp_std_trie_router(struct xdp_md *ctx)
 
     nh.pos = data;
 
+    //struct value_t *val;
+
     /* Packet Processing: First parse the ethernet header. We have no use for this data. 
      * next parse the ipv4 header. We want the dst address from this header. Take the dst address 
      * and perform a lookup in the LPM table. Foward out the interface that is returned using XDP_REDIRECT
@@ -104,13 +103,23 @@ int xdp_std_trie_router(struct xdp_md *ctx)
     int ip;
     ip = parse_ipv4_hdr(&nh, data_end, &ipv4);
 
-
+    struct key_t key;
+    populate_key(&ip, &key, 32);
     
+    /*
+    val = my_trie.lookup(&key);
+    if(NULL != val){
+        int temp = val->valid;
+        val->valid = temp + 1;
+    }
+    */
     
     //in4_pton(source, 16, &ip, '\0', NULL);
     
     
-    bpf_trace_printk("dst ip: %d", ip);
+    //bpf_trace_printk("dst ip: %d", ip);
+
+
     
 
 

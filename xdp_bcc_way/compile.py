@@ -3,6 +3,7 @@
 from bcc import BPF, libbcc
 import ctypes as ct
 import subprocess
+import sys
 
 cflgs = ['-O2', '-std=gnu89', '-w', '-D__KERNEL__', '-D__TARGET_ARCH_x86']
 
@@ -18,12 +19,10 @@ def attach(iface):
     res = libbcc.lib.bpf_obj_pin(b["my_trie"].map_fd, ct.c_char_p("/sys/fs/bpf/my_trie".encode('utf-8')))
     print(res)
 
-
-
     
 
-def detach():
-    BPF.remove_xdp(dev="veth-basic02")
+def detach(iface):
+    BPF.remove_xdp(dev=iface)
     cmd = ['unlink', "/sys/fs/bpf/my_trie"]
     subprocess.check_output(cmd)
     cmd = ['unlink', "/sys/fs/bpf/my_trie"]
@@ -31,8 +30,9 @@ def detach():
 
 
 
-#detach()
-attach(iface = "veth-basic02")
 
 
-
+if(sys.argv[1] == "-c"):
+    attach(iface = "enp0s3")
+elif(sys.argv[1] == "-d"):
+    detach(iface = "enp0s3")
