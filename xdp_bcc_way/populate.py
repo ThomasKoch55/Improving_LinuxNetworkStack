@@ -120,6 +120,6 @@ def populate_test():
 
 #populate_test()
 
-populate("test_routes.txt")
+#populate("test_routes.txt")
 #populate("test_routes.txt")
 print_trie()

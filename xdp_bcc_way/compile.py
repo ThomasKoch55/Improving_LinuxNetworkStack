@@ -10,7 +10,7 @@ cflgs = ['-O2', '-std=gnu89', '-w', '-D__KERNEL__', '-D__TARGET_ARCH_x86']
 def attach(iface):
     b = BPF(src_file="std_trie_kern.c", cflags=cflgs)
 
-    func = b.load_func("xdp_prog_simple", BPF.XDP)
+    func = b.load_func("xdp_std_trie_router", BPF.XDP)
 
 
     

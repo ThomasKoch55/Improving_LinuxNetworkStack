@@ -31,7 +31,7 @@ struct hdr_cursor {
 };
 
 // Create a key_t with the DST IP //
-
+/*
 static __always_inline void populate_key(__u8 *ip, struct key_t *key, __u32 pfx){
     key->ip[0] = ip[0];
     key->ip[1] = ip[1];
@@ -39,10 +39,10 @@ static __always_inline void populate_key(__u8 *ip, struct key_t *key, __u32 pfx)
     key->ip[3] = ip[3];
     key->pfxLen = pfx;
 }
-
+*/
 // Parse ethernet header //
 
-static __always_inline int parse_ethernet_hdr(struct hdr_cursor *nh, void *data_end, struct ethhdr **ethhdr)
+static __always_inline __u16 parse_ethernet_hdr(struct hdr_cursor *nh, void *data_end, struct ethhdr **ethhdr)
 {
     struct ethhdr *eth = nh->pos;
     int hdrsize = sizeof(*eth);
@@ -58,7 +58,7 @@ static __always_inline int parse_ethernet_hdr(struct hdr_cursor *nh, void *data_
     return eth->h_proto;
 }
 
-static __always_inline int parse_ipv4_hdr(struct hdr_cursor *nh, void *data_end, struct iphdr **ipv4hdr)
+static __always_inline __u32 parse_ipv4_hdr(struct hdr_cursor *nh, void *data_end, struct iphdr **ipv4hdr)
 {
     struct iphdr *ipv4 = nh->pos;
     int hdrsize = sizeof(*ipv4);
@@ -83,11 +83,11 @@ int xdp_std_trie_router(struct xdp_md *ctx)
     struct iphdr *ipv4;
 
     struct hdr_cursor nh;
-    int nh_type;
+    __u16 nh_type;
 
     nh.pos = data;
 
-    //struct value_t *val;
+    struct value_t *val;
 
     /* Packet Processing: First parse the ethernet header. We have no use for this data. 
      * next parse the ipv4 header. We want the dst address from this header. Take the dst address 
@@ -100,19 +100,27 @@ int xdp_std_trie_router(struct xdp_md *ctx)
         return XDP_DROP;
     }
     */
-    int ip;
+    __u32 ip;
     ip = parse_ipv4_hdr(&nh, data_end, &ipv4);
 
     struct key_t key;
-    populate_key(&ip, &key, 32);
+    __u32 pfx = 17;
     
-    /*
+
+    memcpy(&(key.ip), &ip, 4);
+    memcpy(&(key.pfxLen), &pfx, 4);
+    //populate_key(&ip, &key, 32);
+    
+    
     val = my_trie.lookup(&key);
-    if(NULL != val){
-        int temp = val->valid;
-        val->valid = temp + 1;
+    
+
+    if(val){
+        struct value_t temp_value;
+        temp_value.valid = (val->valid) + 1;
+        my_trie.insert(&key, &temp_value);
     }
-    */
+    
     
     //in4_pton(source, 16, &ip, '\0', NULL);
     
