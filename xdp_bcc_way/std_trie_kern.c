@@ -104,7 +104,7 @@ int xdp_std_trie_router(struct xdp_md *ctx)
     ip = parse_ipv4_hdr(&nh, data_end, &ipv4);
 
     struct key_t key;
-    __u32 pfx = 17;
+    __u32 pfx = 24;
     
 
     memcpy(&(key.ip), &ip, 4);

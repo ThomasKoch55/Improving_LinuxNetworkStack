@@ -56,7 +56,7 @@ def populate(filename):
 
             output = line.split("\t")
             output = output[:-1]
-
+            print(output)
             #Split IP at '.' and convert to int
             ip_list = output[0].split(".")
             count = 0
@@ -121,5 +121,5 @@ def populate_test():
 #populate_test()
 
 #populate("test_routes.txt")
-#populate("test_routes.txt")
+
 print_trie()
