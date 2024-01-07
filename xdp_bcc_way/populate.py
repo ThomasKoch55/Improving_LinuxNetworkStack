@@ -2,6 +2,7 @@
 
 from bcc import BPF, libbcc, table
 import ctypes as ct
+import sys
 
 PIN_PATH = "/sys/fs/bpf/my_trie"
 MAX_ENTRIES = 10000000
@@ -19,7 +20,7 @@ class key_t(ct.Structure):
         )
 
 class value_t(ct.Structure):
-    _fields_ = [("valid", ct.c_uint64)]
+    _fields_ = [("valid", ct.c_uint32)]
 
     def printVal(self):
         return str(self.valid)
@@ -44,7 +45,7 @@ def populate(filename):
 
     trie = PinnedTrie(PIN_PATH, value_t)
 
-    val = value_t(1)
+    val = value_t(2)
 
     # Each line is parsed into a list containing the IP as list[0] and the SNM as list[1]
     # each list is then fed into our trie located at PIN_PATH with a hardcoded value_t of 1
@@ -122,4 +123,10 @@ def populate_test():
 
 #populate("test_routes.txt")
 
-print_trie()
+#print_trie()
+
+if(sys.argv[1] == "-l"):
+    populate("test_routes.txt")
+    print_trie()
+elif(sys.argv[1] == "-p"):
+    print_trie()

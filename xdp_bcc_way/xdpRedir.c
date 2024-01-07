@@ -49,7 +49,7 @@ static __always_inline __u16 parse_ethernet_hdr(struct hdr_cursor *nh, void *dat
     nh->pos += hdrsize;
     *ethhdr = eth;
 
-    
+    //Used to mirror packets for testing
     u8 src_temp[6];
     memcpy(src_temp, eth->h_source, 6);
 
@@ -78,7 +78,7 @@ static __always_inline __u32 parse_ipv4_hdr(struct hdr_cursor *nh, void *data_en
 }
 
 
-int xdp_std_trie_router(struct xdp_md *ctx)
+int xdp_redir(struct xdp_md *ctx)
 {
     void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
@@ -140,40 +140,5 @@ int xdp_std_trie_router(struct xdp_md *ctx)
 
 }
 
-
-int xdp_prog_simple(struct xdp_md *context) //struct xdp_md *context
-{
-//    enum xdp_action rc = XDP_PASS;
-//    __u64 nh_off, res = 0;
-//    void *data_end = (void *)(long)context->data_end;
-//    void *data = (void *)(long)context->data;
-  /*
-  struct key_t test_key;
-  struct value_t test_val;
-  struct value_t *val;
-
-  test_val.valid = 1;
-  test_key.pfxLen = 24;
-  test_key.ip[0] = 255;
-  test_key.ip[1] = 255;
-  test_key.ip[2] = 255;
-  test_key.ip[3] = 255;
-
-  my_trie.insert(&test_key, &test_val);
-
-
-  val= my_trie.lookup(&test_key);
-  
-  if(val){
-    res = val->valid;
-    
-  }
-
-  */
-
-    
-  
-  return XDP_PASS;
-}
 
 
