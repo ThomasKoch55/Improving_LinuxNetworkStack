@@ -10,19 +10,20 @@
 
 
 
-#define MAX_ELEMENTS 100
+#define MAX_ELEMENTS 1000000
 
 // BCC map
 
 struct key_t {
-    __u32 idx;
-};
+    __u32 pfxLen;
+    __u8 ip[4];
+} BPF_PACKET_HEADER;
 
 struct value_t {
-  __u32 ecode;
-};
+  __u32 valid;
+} BPF_PACKET_HEADER;
 
-BPF_ARRAY(error_map, struct key_t, MAX_ELEMENTS);
+BPF_LPM_TRIE(error_trie, struct key_t, struct value_t, MAX_ELEMENTS);
 
 
 // Parse incoming packet //
@@ -112,16 +113,26 @@ int xdp_helper(struct xdp_md *ctx)
 
     ret_c = bpf_fib_lookup(ctx, &fib_params, sizeof(fib_params), flags);
 
+    /*
+      Got an error code of value 5 from bpf_fib_lookup. In bpf.h, this correlates to 
+      BPF_FIB_LKUP_RET_FWD_DISABLED. This was because net.ipv4.ip_forward was set to 0. 
+      (found in /etc/sysctl.conf)
+    */
+
     struct key_t key;
-    struct value_t val;
+    struct value_t *val;
+    __u32 pfx = 24;
 
-    key.idx = 1;
-    val.ecode = ret_c;
-    error_map.update(&key, &val);
+    memcpy(&(key.ip), &dst_ip, 4);
+    memcpy(&(key.pfxLen), &pfx, 4);
 
-    // if(5 == ret_c){
-    //    return XDP_PASS;
-    // }
+    val = error_trie.lookup(&key);
+
+    if(val){
+        struct value_t temp_value;
+        temp_value.valid = ret_c;
+        error_trie.insert(&key, &temp_value); 
+    }
 
     bpf_redirect(&fib_params.ifindex, NULL);
 

@@ -45,7 +45,7 @@ def populate(filename):
 
     trie = PinnedTrie(PIN_PATH, value_t)
 
-    val = value_t(20)
+    val = value_t(0)
 
     # Each line is parsed into a list containing the IP as list[0] and the SNM as list[1]
     # each list is then fed into our trie located at PIN_PATH with a hardcoded value_t of 1
